@@ -116,6 +116,10 @@ func MakeFunc(func(this *Object, arguments []*Object) interface{}) *Object {
 	return nil
 }
 
+func LiteralFunc(funcString string) *Object {
+	return nil
+}
+
 // Keys returns the keys of the given JavaScript object.
 func Keys(o *Object) []string {
 	if o == nil || o == Undefined {
