@@ -51,6 +51,17 @@ var $ifaceKeyFor = function(x) {
 
 var $identity = function(x) { return x; };
 
+var FN1 = function(v) { this.$val = v; };
+var FN2 = function(x) { return "$" + x; };
+var FN3 = function(x) { return $floatKey(x); };
+var FN4 = function(x) { return x.$high + "$" + x.$low; };
+var FN5 = function(x) { return x.$real + "$" + x.$imag; };
+var FN6 = function(x) {
+        return Array.prototype.join.call($mapArray(x, function(e) {
+          return String(elem.keyFor(e)).replace(/\\/g, "\\\\").replace(/\$/g, "\\$");
+        }), "$");
+      };
+
 var $typeIDCounter = 0;
 
 var $idKey = function(x) {
@@ -75,22 +86,22 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
   case $kindUint32:
   case $kindUintptr:
   case $kindUnsafePointer:
-    typ = function(v) { this.$val = v; };
+    typ = FN1;
     typ.wrapped = true;
     typ.keyFor = $identity;
     break;
 
   case $kindString:
-    typ = function(v) { this.$val = v; };
+    typ = FN1;
     typ.wrapped = true;
-    typ.keyFor = function(x) { return "$" + x; };
+    typ.keyFor = FN2;
     break;
 
   case $kindFloat32:
   case $kindFloat64:
-    typ = function(v) { this.$val = v; };
+    typ = FN1;
     typ.wrapped = true;
-    typ.keyFor = function(x) { return $floatKey(x); };
+    typ.keyFor = FN3;
     break;
 
   case $kindInt64:
@@ -99,7 +110,7 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
       this.$low = low >>> 0;
       this.$val = this;
     };
-    typ.keyFor = function(x) { return x.$high + "$" + x.$low; };
+    typ.keyFor = FN4;
     break;
 
   case $kindUint64:
@@ -108,7 +119,7 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
       this.$low = low >>> 0;
       this.$val = this;
     };
-    typ.keyFor = function(x) { return x.$high + "$" + x.$low; };
+    typ.keyFor = FN4;
     break;
 
   case $kindComplex64:
@@ -117,7 +128,7 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
       this.$imag = $fround(imag);
       this.$val = this;
     };
-    typ.keyFor = function(x) { return x.$real + "$" + x.$imag; };
+    typ.keyFor = FN5;
     break;
 
   case $kindComplex128:
@@ -126,11 +137,11 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
       this.$imag = imag;
       this.$val = this;
     };
-    typ.keyFor = function(x) { return x.$real + "$" + x.$imag; };
+    typ.keyFor = FN5;
     break;
 
   case $kindArray:
-    typ = function(v) { this.$val = v; };
+    typ = FN1;
     typ.wrapped = true;
     typ.ptr = $newType(4, $kindPtr, "*" + string, "", "", function(array) {
       this.$get = function() { return array; };
@@ -141,18 +152,14 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
       typ.elem = elem;
       typ.len = len;
       typ.comparable = elem.comparable;
-      typ.keyFor = function(x) {
-        return Array.prototype.join.call($mapArray(x, function(e) {
-          return String(elem.keyFor(e)).replace(/\\/g, "\\\\").replace(/\$/g, "\\$");
-        }), "$");
-      };
+      typ.keyFor = FN6;
       typ.ptr.init(typ);
       Object.defineProperty(typ.ptr.nil, "nilCheck", { get: $throwNilPointerError });
     };
     break;
 
   case $kindChan:
-    typ = function(v) { this.$val = v; };
+    typ = FN1;
     typ.wrapped = true;
     typ.keyFor = $idKey;
     typ.init = function(elem, sendOnly, recvOnly) {
@@ -163,7 +170,7 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
     break;
 
   case $kindFunc:
-    typ = function(v) { this.$val = v; };
+    typ = FN1;
     typ.wrapped = true;
     typ.init = function(params, results, variadic) {
       typ.params = params;
@@ -185,7 +192,7 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
     break;
 
   case $kindMap:
-    typ = function(v) { this.$val = v; };
+    typ = FN1;
     typ.wrapped = true;
     typ.init = function(key, elem) {
       typ.key = key;
@@ -229,7 +236,7 @@ var $newType = function(size, kind, string, name, pkg, constructor) {
     break;
 
   case $kindStruct:
-    typ = function(v) { this.$val = v; };
+    typ = FN1;
     typ.wrapped = true;
     typ.ptr = $newType(4, $kindPtr, "*" + string, "", "", constructor);
     typ.ptr.elem = typ;
