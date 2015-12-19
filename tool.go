@@ -33,7 +33,6 @@ import (
 )
 
 var currentDirectory string
-var temporaryDirectory string
 
 func init() {
 	var err error
@@ -46,10 +45,6 @@ func init() {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
-	}
-	temporaryDirectory = os.Getenv("GOPHERJS_TEMPDIR")
-	if len(temporaryDirectory) == 0 {
-		temporaryDirectory = currentDirectory
 	}
 }
 
@@ -228,7 +223,7 @@ func main() {
 				return fmt.Errorf("gopherjs run: no go files listed")
 			}
 
-			tempfile, err := ioutil.TempFile(temporaryDirectory, filepath.Base(args[0])+".")
+			tempfile, err := tempFile(filepath.Base(args[0]+"."),true)
 			if err != nil {
 				return err
 			}
@@ -368,7 +363,7 @@ func main() {
 					return err
 				}
 
-				tempfile, err := ioutil.TempFile(temporaryDirectory, "test.")
+				tempfile, err := tempFile("test.", len(pkg.JSFiles) == 0)
 				if err != nil {
 					return err
 				}
@@ -471,6 +466,15 @@ func main() {
 	}
 	rootCmd.AddCommand(cmdBuild, cmdGet, cmdInstall, cmdRun, cmdTest, cmdTool, cmdServe)
 	rootCmd.Execute()
+}
+
+func tempFile(prefix string, safeInTmp bool) (*os.File, error) {
+	tempfile, err := ioutil.TempFile(currentDirectory, prefix)
+	if err != nil && ! safeInTmp {
+		return tempfile, err
+	}
+	os.Remove( tempfile.Name() )
+	return ioutil.TempFile("", prefix)
 }
 
 // tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
